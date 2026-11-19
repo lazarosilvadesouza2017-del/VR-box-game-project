@@ -1,4 +1,5 @@
 
+
 name: Build VR Box Games APK
 
 on:
@@ -47,18 +48,10 @@ jobs:
           npm ci
           npm run build:ui
 
-      - name: Configurar Android SDK
-        uses: android-actions/setup-android@v3
-
       - name: Instalar ferramentas Android
         run: |
-          SDKMANAGER="$(command -v sdkmanager || true)"
-          if [ -z "$SDKMANAGER" ]; then
-            SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -name sdkmanager -type f | sort -V | tail -1)"
-          fi
-
-          yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
-
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -name sdkmanager -type f | sort -V | tail -1)"
+          yes | "$SDKMANAGER" --licenses || true
           "$SDKMANAGER" --install \
             "platform-tools" \
             "platforms;android-35" \
@@ -80,5 +73,3 @@ jobs:
           if-no-files-found: error
           retention-days: 7
           
-
-      
