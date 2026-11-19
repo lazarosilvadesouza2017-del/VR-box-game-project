@@ -1,3 +1,4 @@
+
 name: Build VR Box Games APK
 
 on:
@@ -19,7 +20,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p source
-          gh release download v1-source \
+          gh release download v1-fonte \
             --repo "$GITHUB_REPOSITORY" \
             --pattern 'VR-Box-Games-modo-cinema-integrado-rastreamento.zip' \
             --dir source
@@ -64,3 +65,4 @@ jobs:
           path: source/VR-Box-Games-Android/nextvr-android/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 7
+          
