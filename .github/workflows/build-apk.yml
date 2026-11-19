@@ -1,5 +1,4 @@
 
-
 name: Build VR Box Games APK
 
 on:
@@ -10,60 +9,76 @@ permissions:
 
 jobs:
   build:
+    name: Construir APK
     runs-on: ubuntu-latest
     timeout-minutes: 90
 
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Download project ZIP
+      - name: Baixar projeto original
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p source
-          gh release download v1-fonte \
-            --repo lazarosilvadesouza2017-del/VR-box-game-project \
+          gh release download v1-source \
+            --repo "$GITHUB_REPOSITORY" \
             --pattern 'VR-Box-Games-modo-cinema-integrado-rastreamento.zip' \
             --dir source
-          unzip -q source/*.zip -d source
+
+          unzip -q source/VR-Box-Games-modo-cinema-integrado-rastreamento.zip -d source
           test -f source/VR-Box-Games-Android/gradlew
 
-      - uses: actions/setup-java@v4
+      - name: Configurar Java
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
+          cache: gradle
 
-      - uses: actions/setup-node@v4
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: npm
+          cache-dependency-path: source/VR-Box-Games-Android/package-lock.json
 
-      - name: Build UI
+      - name: Compilar interface
         working-directory: source/VR-Box-Games-Android
         run: |
           npm ci
           npm run build:ui
 
-      - uses: android-actions/setup-android@v3
+      - name: Configurar Android SDK
+        uses: android-actions/setup-android@v3
 
-      - name: Install Android tools
+      - name: Instalar ferramentas Android
         run: |
-          yes | sdkmanager --licenses >/dev/null 2>&1 || true
-          sdkmanager "platform-tools" \
+          SDKMANAGER="$(command -v sdkmanager || true)"
+          if [ -z "$SDKMANAGER" ]; then
+            SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -name sdkmanager -type f | sort -V | tail -1)"
+          fi
+
+          yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
+
+          "$SDKMANAGER" --install \
+            "platform-tools" \
             "platforms;android-35" \
             "build-tools;35.0.0" \
             "ndk;29.0.14206865" \
             "cmake;3.22.1"
 
-      - name: Build APK
+      - name: Construir APK
         working-directory: source/VR-Box-Games-Android
         run: |
           chmod +x gradlew
           ./gradlew --no-daemon :nextvr-android:assembleDebug --stacktrace
 
-      - uses: actions/upload-artifact@v4
+      - name: Disponibilizar APK
+        uses: actions/upload-artifact@v4
         with:
-          name: vr-box-games-debug-apk
+          name: VR-Box-Games-APK
           path: source/VR-Box-Games-Android/nextvr-android/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 7
+          
+
       
