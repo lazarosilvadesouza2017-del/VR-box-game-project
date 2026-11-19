@@ -1,0 +1,66 @@
+name: Build VR Box Games APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download project ZIP
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p source
+          gh release download v1-source \
+            --repo "$GITHUB_REPOSITORY" \
+            --pattern 'VR-Box-Games-modo-cinema-integrado-rastreamento.zip' \
+            --dir source
+          unzip -q source/*.zip -d source
+          test -f source/VR-Box-Games-Android/gradlew
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Build UI
+        working-directory: source/VR-Box-Games-Android
+        run: |
+          npm ci
+          npm run build:ui
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install Android tools
+        run: |
+          yes | sdkmanager --licenses >/dev/null 2>&1 || true
+          sdkmanager "platform-tools" \
+            "platforms;android-35" \
+            "build-tools;35.0.0" \
+            "ndk;29.0.14206865" \
+            "cmake;3.22.1"
+
+      - name: Build APK
+        working-directory: source/VR-Box-Games-Android
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon :nextvr-android:assembleDebug --stacktrace
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vr-box-games-debug-apk
+          path: source/VR-Box-Games-Android/nextvr-android/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 7
