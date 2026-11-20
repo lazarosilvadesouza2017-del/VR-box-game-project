@@ -1,4 +1,5 @@
 
+
 name: Build VR Box Games APK
 
 on:
@@ -9,12 +10,12 @@ permissions:
 
 jobs:
   build:
-    name: Construir APK atualizado
+    name: Construir APK
     runs-on: ubuntu-latest
     timeout-minutes: 90
 
     steps:
-      - name: Baixar VR Box Games atualizado
+      - name: Baixar projeto atualizado
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -32,7 +33,6 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-          cache: gradle
 
       - name: Configurar Node.js
         uses: actions/setup-node@v4
@@ -58,7 +58,7 @@ jobs:
             "ndk;29.0.14206865" \
             "cmake;3.22.1"
 
-      - name: Construir APK
+      - name: Compilar APK
         working-directory: source/VR-Box-Games-Android
         run: |
           chmod +x gradlew
@@ -71,5 +71,3 @@ jobs:
           path: source/VR-Box-Games-Android/nextvr-android/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 7
-concurrency:
-
