@@ -1,5 +1,4 @@
 
-
 name: Build VR Box Games APK
 
 on:
@@ -10,17 +9,17 @@ permissions:
 
 jobs:
   build:
-    name: Construir APK
+    name: Construir APK atualizado
     runs-on: ubuntu-latest
     timeout-minutes: 90
 
     steps:
-      - name: Baixar projeto original
+      - name: Baixar VR Box Games atualizado
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p source
-          gh release download v1-source \
+          gh release download v2-source \
             --repo "$GITHUB_REPOSITORY" \
             --pattern 'VR-Box-Games-modo-cinema-integrado-rastreamento.zip' \
             --dir source
@@ -68,8 +67,9 @@ jobs:
       - name: Disponibilizar APK
         uses: actions/upload-artifact@v4
         with:
-          name: VR-Box-Games-APK
+          name: VR-Box-Games-APK-Atualizado
           path: source/VR-Box-Games-Android/nextvr-android/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 7
-          
+concurrency:
+
