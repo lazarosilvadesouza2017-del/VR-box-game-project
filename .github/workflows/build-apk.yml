@@ -1,5 +1,4 @@
 
-
 name: Build VR Box Games APK
 
 on:
@@ -22,19 +21,21 @@ jobs:
           mkdir -p source
           gh release download v2-source \
             --repo "$GITHUB_REPOSITORY" \
-            --pattern '*.zip' \
+            --pattern 'VR-Box-Games-revisao-taxi-e-otimizacao.zip' \
             --dir source
 
-          ZIP_FILE="$(find source -maxdepth 1 -type f -iname '*.zip' -print -quit)"
-          if [ -z "$ZIP_FILE" ]; then
-            echo "Nenhum arquivo ZIP encontrado na Release v2-source"
-            ls -lah source
+          unzip -q source/VR-Box-Games-revisao-taxi-e-otimizacao.zip -d source
+
+          echo "Arquivos extraídos:"
+          ls -lah source
+
+          PROJECT_DIR="$(find source -name gradlew -type f -printf '%h\n' | head -1)"
+          if [ -z "$PROJECT_DIR" ]; then
+            echo "Não encontrei o gradlew dentro do ZIP."
             exit 1
           fi
 
-          echo "Arquivo encontrado: $ZIP_FILE"
-          unzip -q "$ZIP_FILE" -d source
-          test -f source/VR-Box-Games-Android/gradlew
+          echo "$PROJECT_DIR" > project_dir.txt
 
       - name: Configurar Java
         uses: actions/setup-java@v4
@@ -46,12 +47,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: npm
-          cache-dependency-path: source/VR-Box-Games-Android/package-lock.json
 
       - name: Compilar interface
-        working-directory: source/VR-Box-Games-Android
         run: |
+          PROJECT_DIR="$(cat project_dir.txt)"
+          cd "$PROJECT_DIR"
           npm ci
           npm run build:ui
 
@@ -67,8 +67,9 @@ jobs:
             "cmake;3.22.1"
 
       - name: Construir APK
-        working-directory: source/VR-Box-Games-Android
         run: |
+          PROJECT_DIR="$(cat project_dir.txt)"
+          cd "$PROJECT_DIR"
           chmod +x gradlew
           ./gradlew --no-daemon :nextvr-android:assembleDebug --stacktrace
 
@@ -76,9 +77,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: VR-Box-Games-APK-Atualizado
-          path: source/VR-Box-Games-Android/nextvr-android/build/outputs/apk/debug/*.apk
+          path: source/**/nextvr-android/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 7
 
-
-      
