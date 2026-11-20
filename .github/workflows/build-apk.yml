@@ -22,10 +22,18 @@ jobs:
           mkdir -p source
           gh release download v2-source \
             --repo "$GITHUB_REPOSITORY" \
-            --pattern 'VR-Box-Games-modo-cinema-integrado-rastreamento.zip' \
+            --pattern '*.zip' \
             --dir source
 
-          unzip -q source/VR-Box-Games-modo-cinema-integrado-rastreamento.zip -d source
+          ZIP_FILE="$(find source -maxdepth 1 -type f -iname '*.zip' -print -quit)"
+          if [ -z "$ZIP_FILE" ]; then
+            echo "Nenhum arquivo ZIP encontrado na Release v2-source"
+            ls -lah source
+            exit 1
+          fi
+
+          echo "Arquivo encontrado: $ZIP_FILE"
+          unzip -q "$ZIP_FILE" -d source
           test -f source/VR-Box-Games-Android/gradlew
 
       - name: Configurar Java
@@ -58,7 +66,7 @@ jobs:
             "ndk;29.0.14206865" \
             "cmake;3.22.1"
 
-      - name: Compilar APK
+      - name: Construir APK
         working-directory: source/VR-Box-Games-Android
         run: |
           chmod +x gradlew
@@ -71,3 +79,6 @@ jobs:
           path: source/VR-Box-Games-Android/nextvr-android/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 7
+
+
+      
